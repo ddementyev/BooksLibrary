@@ -1,0 +1,112 @@
+﻿<script src="~/Scripts/knockout-3.4.0.js"></script>
+<script src="~/Scripts/knockout.simpleGrid.3.0.js"></script>
+<link href="~/Content/Site.css" rel="stylesheet" />
+<script src="~/Scripts/jquery-1.10.2.js"></script>
+
+<div id="booksList">
+    <button id="addBook" type="button" style="margin-bottom: 20px;" class="btn btn-primary">Add new book</button>
+    <button class="btn btn-success" style="margin-bottom: 20px;" data-bind='click: sortByName'>Sort by title</button>
+    <button class="btn btn-success" style="margin-bottom: 20px;" data-bind='click: sortByName'>Sort by year</button>
+    <div data-bind='simpleGrid: booksGrid'> </div>
+</div>
+
+@*<form id="newBook" data-bind="visible: false, submit: addItem">
+        <input type="text" data-bind='value: NewTitle, valueUpdate: "afterkeydown"'>
+        <input type="text" data-bind="value: NewPages">
+        <button id="addNewBook" style="margin-top: 20px;" class="btn btn-danger" type="submit">Add</button>
+    </form>*@
+
+<script>
+
+    var booksList = [];
+
+    $.ajax({
+        type: 'GET',
+        url: '/Books/GetBooks',
+        success: function (books) {
+
+            $.each(books, (i, book) => {
+                booksList.push(book);
+            })
+
+            ko.applyBindings(new PagedGridModel(booksList));
+
+
+        },
+        error: function (emp) {
+            alert('error');
+        }
+    });
+
+    var PagedGridModel = function (items) {
+        this.items = ko.observableArray(items);
+
+        var it = this.items()[0];
+        $.each(it.Authors, (i, author) => {
+            var ytrtyr = author.Name + author.Surname
+        });
+
+
+
+        this.addItem = function () {
+            this.items.push({ name: "New item", sales: 0, price: 100 });
+        };
+
+        this.sortByName = function () {
+            this.items.sort(function (a, b) {
+                return a.name < b.name ? -1 : 1;
+            });
+        };
+
+        this.jumpToFirstPage = function () {
+            this.gridViewModel.currentPageIndex(0);
+        };
+
+        this.booksGrid = new ko.simpleGrid.viewModel({
+            data: this.items,
+            columns: [
+                { headerText: "№", rowText: "Id" },
+                { headerText: "Title", rowText: "Title" },
+                {
+                    headerText: "Authors", rowText: function (item) {
+                        var authors = [];
+                        $.each(item.Authors, (i, author) => {
+                            authors.push(author.Name + ' ' + author.Surname);
+                        })
+                        return authors;
+                    }
+                },
+                { headerText: "Pages", rowText: "Pages" },
+                { headerText: "Publisher", rowText: "Publisher" },
+                { headerText: "Year", rowText: "Year" },
+                { headerText: "ISBN", rowText: "ISBN" },
+                { headerText: "Cover", rowText: "Cover" },
+                {
+                    headerText: "Actions", rowText:
+                        {
+                            edit: function () {
+                                return function () {
+                                    alert("123")
+                                }
+                            },
+                            deletion: function (item) {
+                                return function () {
+                                    alert("456")
+                                }
+                            }
+                        }
+                },
+            ],
+            //pageSize: 4
+        });
+    };
+
+
+
+    $("#addBook").click(function () {
+        $("#booksList").hide();
+        $("#newBook").show();
+    });
+
+
+</script>
