@@ -2,51 +2,150 @@
 <script src="~/Scripts/knockout.simpleGrid.3.0.js"></script>
 <link href="~/Content/Site.css" rel="stylesheet" />
 <script src="~/Scripts/jquery-1.10.2.js"></script>
-
-<div id="booksList">
-    <button id="addBook" type="button" style="margin-bottom: 20px;" class="btn btn-primary">Add new book</button>
-    <button class="btn btn-success" style="margin-bottom: 20px;" data-bind='click: sortByName'>Sort by title</button>
-    <button class="btn btn-success" style="margin-bottom: 20px;" data-bind='click: sortByName'>Sort by year</button>
+<script src="~/Scripts/knockout.bindings.js"></script>
+ 
+<button id="addBook" type="button" style="margin-bottom: 20px;" class="btn btn-primary">Add new book</button>
+<button class="btn btn-success" style="margin-bottom: 20px;" data-bind='click: sortByName'>Sort by title</button>
+<button class="btn btn-success" style="margin-bottom: 20px;" data-bind='click: sortByName'>Sort by year</button>
+<div id="booksList" data-bind='uniqueName: true'>
     <div data-bind='simpleGrid: booksGrid'> </div>
 </div>
 
-@*<form id="newBook" data-bind="visible: false, submit: addItem">
-        <input type="text" data-bind='value: NewTitle, valueUpdate: "afterkeydown"'>
-        <input type="text" data-bind="value: NewPages">
-        <button id="addNewBook" style="margin-top: 20px;" class="btn btn-danger" type="submit">Add</button>
-    </form>*@
+<form id="newBook" data-bind="visible: false, submit: addItem">
+
+
+    <div class="form-group">
+        <label style="margin-top: 20px;" for="title">Название книги:</label>
+        <input type="text" class="form-control" id="title" data-bind='value: title' placeholder="Название книги">
+
+        <div id="authorsList" class="form-inline">
+            <p>
+                <label style="margin-top: 20px;" for="pages">Авторы:</label>
+                <a href="#" id="addAuthor" class="btn btn-link" data-bind='click: addAuthor'>Еще автор</a><br />
+                <div id="authors" data-bind='foreach: authors'>
+                    <input type="text" class="form-control" id="newame" data-bind='value: name, uniqueName: true' placeholder="Имя"><br />
+                    <input style="margin-bottom: 20px;" type="text" class="form-control" data-bind='value: surname, uniqueName: true' id="surname" placeholder="Фамилия" />
+                    <a href="#" id="remove" data-bind="click: $root.removeAuthor">Удалить</a><br />
+                </div>
+            </p>
+        </div>
+
+        <label style="margin-top: 20px;" for="pages">Количество страниц:</label>
+        <input type="text" class="form-control" id="pages" data-bind='value: pages' placeholder="Количество страниц">
+
+        <label style="margin-top: 20px;" for="phouse">Издательство:</label>
+        <input type="text" class="form-control" id="phouse" data-bind='value: phouse' placeholder="Издательство">
+
+        <label style="margin-top: 20px;" for="pdate">Год публикации:</label>
+        <input type="date" class="form-control" id="pdate" data-bind='value: pdate' placeholder="Год публикации">
+
+        <label style="margin-top: 20px;" for="isbn">Международный стандартный книжный номер:</label>
+        <input type="text" class="form-control" id="isbn" data-bind='value: isbn' placeholder="ISBN">
+
+        <label style="margin-top: 20px;" for="cover">Изображение:</label>
+        <input type="file" id="fileUpload" class="file_input_hidden" data-bind="FileUpload: name, fileObjectURL: url, fileBinaryData: cover" /> 
+    </div>
+    <button id="addNewBook" style="margin-top: 20px;" class="btn btn-danger" type="submit">Add</button>
+</form>
 
 <script>
 
-    var booksList = [];
+    //ko.applyBindings(viewModel, document.getElementById("authorsList"));
 
-    $.ajax({
-        type: 'GET',
-        url: '/Books/GetBooks',
-        success: function (books) {
-
-            $.each(books, (i, book) => {
-                booksList.push(book);
-            })
-
-            ko.applyBindings(new PagedGridModel(booksList));
-
-
-        },
-        error: function (emp) {
-            alert('error');
-        }
-    });
-
-    var PagedGridModel = function (items) {
+    var BooksModel = function (items) {
         this.items = ko.observableArray(items);
+        this.title = ko.observable("");
+        this.name = ko.observable("");
+        this.surname = ko.observable("");
+        this.pages = ko.observable("");
+        this.phouse = ko.observable("");
+        this.pdate = ko.observable("");
+        this.isbn = ko.observable("");
+        this.name = ko.observable("");
+        this.url = ko.observable("");
+        this.cover = ko.observableArray("");
 
-        var it = this.items()[0];
-        $.each(it.Authors, (i, author) => {
-            var ytrtyr = author.Name + author.Surname
+        this.authors = ko.observableArray("");;
+
+        this.addItem = function () {
+            this.items = {
+                Title: this.title(),
+                Authors: this.authors(),
+                Pages: this.pages(),
+                Publisher: this.phouse(),
+                Year: this.pdate(),
+                ISBN: this.isbn(),
+                Cover: this.cover()
+            };
+       
+
+            $.ajax({
+                type: 'POST',
+                url: '/Books/AddBook',
+                data: JSON.stringify(this.items),
+                dataType: 'json',
+                contentType: 'application/json; charset=utf-8',
+                success: function (books) {
+                    ko.cleanNode(document.getElementById("booksList"));
+ 
+                    GetBooks();
+                    $("#booksList").show();
+                    $("#newBook").hide();
+                },
+                error: function (emp) {
+                    alert('error');
+                }
+            });
+
+
+           
+        }.bind(this);
+
+
+        this.authors.push({
+            name: "",
+            surname: ""
         });
 
 
+        this.addAuthor = function () {
+            this.authors.push({
+                name: "",
+                surname: ""
+            });
+        };
+
+        this.removeAuthor = function (author) {
+            this.authors.remove(author);
+        }.bind(this);
+    };
+
+
+    ko.applyBindings(new BooksModel(), document.getElementById("newBook"));
+
+    GetBooks();
+    function GetBooks() {
+        $.ajax({
+            type: 'GET',
+            url: '/Books/GetBooks',
+            success: function (books) {
+                var booksList = [];
+                $.each(books, (i, book) => {
+                    booksList.push(book);
+                })
+
+                ko.applyBindings(new PagedGridModel(booksList), document.getElementById("booksList"));
+
+
+            },
+            error: function (emp) {
+                alert('error');
+            }
+        });
+    }
+
+    var PagedGridModel = function (items) {
+        this.items = ko.observableArray(items);
 
         this.addItem = function () {
             this.items.push({ name: "New item", sales: 0, price: 100 });
@@ -71,7 +170,7 @@
                     headerText: "Authors", rowText: function (item) {
                         var authors = [];
                         $.each(item.Authors, (i, author) => {
-                            authors.push(author.Name + ' ' + author.Surname);
+                            authors.push(' ' + author.Name + ' ' + author.Surname);
                         })
                         return authors;
                     }
@@ -84,20 +183,20 @@
                 {
                     headerText: "Actions", rowText:
                         {
-                            edit: function () {
+                            edit: function (item) {
                                 return function () {
-                                    alert("123")
+                                    alert(item.Id)
                                 }
                             },
                             deletion: function (item) {
                                 return function () {
-                                    alert("456")
+                                    alert(item.Id)
                                 }
                             }
                         }
                 },
             ],
-            //pageSize: 4
+            pageSize: 10
         });
     };
 

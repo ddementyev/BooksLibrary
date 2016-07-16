@@ -49,12 +49,19 @@
                         <tbody data-bind=\"foreach: itemsOnCurrentPage\">\
                            <tr data-bind=\"foreach: $parent.columns\">\
                                <!--ko if: typeof rowText == 'object' && typeof rowText.edit == 'function' && typeof rowText.deletion == 'function'-->\
-                                  <td><button class=\"btn btn-warning btn-xs\" data-bind=\"click: rowText.edit($parent)\">Edit</button>\
+                                  <td style=\"width: 101px;\"><button class=\"btn btn-warning btn-xs\" data-bind=\"click: rowText.edit($parent)\">Edit</button>\
                                   <button class=\"btn btn-danger btn-xs\" data-bind=\"click: rowText.deletion($parent)\">Delete</button>\
                                   </td>\
                                 <!-- /ko -->\
                                 <!--ko ifnot: typeof rowText == 'object' && typeof rowText.edit == 'function' && typeof rowText.deletion == 'function'-->\
+                                    <!--ko if: headerText == 'Cover'-->\
+                                      <td>\
+                                          <img width=\"45px\" height=\"65px\" data-bind=\"attr:{src: $parent[rowText]}\" />\
+                                        </td>\
+                                    <!--/ko-->\
+                                 <!--ko ifnot: headerText == 'Cover'-->\
                                   <td data-bind=\"text: typeof rowText == 'function' ? rowText($parent) : $parent[rowText]\"></td>\
+                                 <!--/ko-->\
                                <!--/ko-->\
                             </tr>\
                         </tbody>\

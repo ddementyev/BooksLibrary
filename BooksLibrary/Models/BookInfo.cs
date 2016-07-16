@@ -12,7 +12,7 @@ namespace BooksLibrary
         public string Publisher { get; set; }
         public string Year { get; set; }
         public string ISBN { get; set; }
-        public byte[] Cover { get; set; }
+        public string Cover { get; set; }
     }
 
     public class Author
