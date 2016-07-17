@@ -1,112 +1,166 @@
-﻿<script src="~/Scripts/knockout-3.4.0.js"></script>
-<script src="~/Scripts/knockout.simpleGrid.3.0.js"></script>
-<link href="~/Content/Site.css" rel="stylesheet" />
-<script src="~/Scripts/jquery-1.10.2.js"></script>
-<script src="~/Scripts/knockout.bindings.js"></script>
- 
-<button id="addBook" type="button" style="margin-bottom: 20px;" class="btn btn-primary">Add new book</button>
-<button class="btn btn-success" style="margin-bottom: 20px;" data-bind='click: sortByName'>Sort by title</button>
-<button class="btn btn-success" style="margin-bottom: 20px;" data-bind='click: sortByName'>Sort by year</button>
-<div id="booksList" data-bind='uniqueName: true'>
+﻿<script src="~/Scripts/knockout.validation.js"></script>
+
+<div id="booksList" data-bind='visible: isBooksListVisible, uniqueName: true'>
+    <button id="addBook" type="button" style="margin-bottom: 20px;" data-bind='click: editBook' class="btn btn-primary">Add new book</button>
+    <button class="btn btn-success" style="margin-bottom: 20px;" data-bind='click: sortByTitle'>Sort by title</button>
+    <button class="btn btn-success" style="margin-bottom: 20px;" data-bind='click: sortByYear'>Sort by year</button>
     <div data-bind='simpleGrid: booksGrid'> </div>
 </div>
 
-<form id="newBook" data-bind="visible: false, submit: addItem">
-
+<form id="newBook" data-bind="visible: isBookEditorVisible">
+    <button id="back" class="btn btn-success" style="margin-bottom: 20px;" data-bind='click: back'>Back</button>
 
     <div class="form-group">
-        <label style="margin-top: 20px;" for="title">Название книги:</label>
-        <input type="text" class="form-control" id="title" data-bind='value: title' placeholder="Название книги">
+        <label style="margin-top: 20px;" for="title">Title:</label>
+        <input type="text" class="form-control" id="title" data-bind='value: title' placeholder="Title">
 
         <div id="authorsList" class="form-inline">
             <p>
-                <label style="margin-top: 20px;" for="pages">Авторы:</label>
-                <a href="#" id="addAuthor" class="btn btn-link" data-bind='click: addAuthor'>Еще автор</a><br />
+                <label style="margin-top: 20px;" for="pages">Authors:</label>
+                <a href="#" id="addAuthor" class="btn btn-link" data-bind='click: addAuthor'>One more</a><br />
                 <div id="authors" data-bind='foreach: authors'>
-                    <input type="text" class="form-control" id="newame" data-bind='value: name, uniqueName: true' placeholder="Имя"><br />
-                    <input style="margin-bottom: 20px;" type="text" class="form-control" data-bind='value: surname, uniqueName: true' id="surname" placeholder="Фамилия" />
-                    <a href="#" id="remove" data-bind="click: $root.removeAuthor">Удалить</a><br />
+                    <input type="text" class="form-control" id="newame" data-bind='value: name, uniqueName: true' placeholder="Name"><br />
+                    <input style="margin-bottom: 20px;" type="text" class="form-control" data-bind='value: surname, uniqueName: true' id="surname" placeholder="Surname" />
+                    <a href="#" id="remove" data-bind="click: $root.removeAuthor">Delete</a><br />
                 </div>
             </p>
         </div>
 
-        <label style="margin-top: 20px;" for="pages">Количество страниц:</label>
-        <input type="text" class="form-control" id="pages" data-bind='value: pages' placeholder="Количество страниц">
+        <label style="margin-top: 20px;" for="pages">Pages:</label>
+        <input type="text" class="form-control" id="pages" data-bind='value: pages' placeholder="Pages">
 
-        <label style="margin-top: 20px;" for="phouse">Издательство:</label>
-        <input type="text" class="form-control" id="phouse" data-bind='value: phouse' placeholder="Издательство">
+        <label style="margin-top: 20px;" for="publisher">Publisher (optional):</label>
+        <input type="text" class="form-control" id="publisher" data-bind='value: publisher' placeholder="Publisher">
 
-        <label style="margin-top: 20px;" for="pdate">Год публикации:</label>
-        <input type="date" class="form-control" id="pdate" data-bind='value: pdate' placeholder="Год публикации">
+        <label style="margin-top: 20px;" for="year">Year:</label>
+        <input type="text" class="form-control" id="year" data-bind='value: year' placeholder="Year">
 
-        <label style="margin-top: 20px;" for="isbn">Международный стандартный книжный номер:</label>
+        <label style="margin-top: 20px;" for="isbn">ISBN:</label>
         <input type="text" class="form-control" id="isbn" data-bind='value: isbn' placeholder="ISBN">
 
-        <label style="margin-top: 20px;" for="cover">Изображение:</label>
-        <input type="file" id="fileUpload" class="file_input_hidden" data-bind="FileUpload: name, fileObjectURL: url, fileBinaryData: cover" /> 
+        <label style="margin-top: 20px;" for="cover">Cover (optional):</label>
+        <input type="file" id="fileUpload" class="file_input_hidden" data-bind="FileUpload: name, fileObjectURL: url, fileBinaryData: cover" />
     </div>
-    <button id="addNewBook" style="margin-top: 20px;" class="btn btn-danger" type="submit">Add</button>
+    <button id="addNewBook" style="margin-top: 20px;" class="btn btn-danger" data-bind="visible: isAddButtonVisible, click: addBook" type="submit">Add</button>
+    <button id="addNewBook" style="margin-top: 20px;" class="btn btn-danger" data-bind="visible: isEditButtonVisible, click: changeBook" type="submit">Edit</button>
 </form>
 
 <script>
+    var isBooksListVisible = ko.observable(true);
+    var isBookEditorVisible = ko.observable(false);
+    var isAddButtonVisible = ko.observable(false);
+    var isEditButtonVisible = ko.observable(false);
 
-    //ko.applyBindings(viewModel, document.getElementById("authorsList"));
+    var BooksModel = function (book) {
+        this.book = ko.observableArray(book);
 
-    var BooksModel = function (items) {
-        this.items = ko.observableArray(items);
-        this.title = ko.observable("");
-        this.name = ko.observable("");
-        this.surname = ko.observable("");
-        this.pages = ko.observable("");
-        this.phouse = ko.observable("");
-        this.pdate = ko.observable("");
-        this.isbn = ko.observable("");
-        this.name = ko.observable("");
-        this.url = ko.observable("");
-        this.cover = ko.observableArray("");
+        if (this.book().length > 0) {
+            var id = ko.observable(this.book()[0].Id);
+            this.title = ko.observable(this.book()[0].Title).extend({  
+                required: { message: 'Please supply your email address.' }
+            })
+            this.pages = ko.observable(this.book()[0].Pages);
+            this.publisher = ko.observable(this.book()[0].Publisher);
+            this.year = ko.observable(this.book()[0].Year);
+            this.isbn = ko.observable(this.book()[0].ISBN);
+            this.name = ko.observable("");
+            this.url = ko.observable("");
+            this.cover = ko.observableArray("");
+            this.authors = ko.observableArray("");
+            $.each(this.book()[0].Authors, (i, elem) => {
+                this.authors.push({
+                    name: ko.observable(elem.Name),
+                    surname: ko.observable(elem.Surname)
+                });
+            })
+        }
+        else {
+            this.title = ko.observable("");
+            this.name = ko.observable("");
+            this.surname = ko.observable("");
+            this.pages = ko.observable("");
+            this.publisher = ko.observable("");
+            this.year = ko.observable("");
+            this.isbn = ko.observable("");
+            this.name = ko.observable("");
+            this.url = ko.observable("");
+            this.cover = ko.observableArray("");
+            this.authors = ko.observableArray("");
+        }
 
-        this.authors = ko.observableArray("");;
-
-        this.addItem = function () {
-            this.items = {
+        this.addBook = function () {
+            this.book = {
                 Title: this.title(),
                 Authors: this.authors(),
                 Pages: this.pages(),
-                Publisher: this.phouse(),
-                Year: this.pdate(),
+                Publisher: this.publisher(),
+                Year: this.year(),
                 ISBN: this.isbn(),
                 Cover: this.cover()
             };
-       
-
             $.ajax({
                 type: 'POST',
                 url: '/Books/AddBook',
-                data: JSON.stringify(this.items),
+                data: JSON.stringify(this.book),
                 dataType: 'json',
                 contentType: 'application/json; charset=utf-8',
                 success: function (books) {
                     ko.cleanNode(document.getElementById("booksList"));
- 
                     GetBooks();
-                    $("#booksList").show();
-                    $("#newBook").hide();
+                    isBooksListVisible(true);
+                    isBookEditorVisible(false);
                 },
-                error: function (emp) {
+                error: function () {
                     alert('error');
                 }
             });
-
-
-           
         }.bind(this);
 
+        this.changeBook = function () {
+            var authors = [];
 
-        this.authors.push({
-            name: "",
-            surname: ""
-        });
+            $.each(this.authors(), (i, elem) => {
+                authors.push({
+                    name: ko.isObservable(elem.name) ? elem.name() : elem.name,
+                    surname: ko.isObservable(elem.surname) ? elem.surname() : elem.surname
+                });
+            })
 
+            this.book = {
+                Id: id(),
+                Title: this.title(),
+                Authors: authors,
+                Pages: this.pages(),
+                Publisher: this.publisher(),
+                Year: this.year(),
+                ISBN: this.isbn(),
+                Cover: this.cover()
+            };
+
+            $.ajax({
+                type: 'POST',
+                url: '/Books/ChangeBook',
+                data: JSON.stringify(this.book),
+                dataType: 'json',
+                contentType: 'application/json; charset=utf-8',
+                success: function (books) {
+                    ko.cleanNode(document.getElementById("booksList"));
+                    GetBooks();
+                    isBooksListVisible(true);
+                    isBookEditorVisible(false);
+                },
+                error: function () {
+                    alert('error');
+                }
+            });
+        }.bind(this);
+
+        if (this.authors().length == 0) {
+            this.authors.push({
+                name: "",
+                surname: ""
+            });
+        }
 
         this.addAuthor = function () {
             this.authors.push({
@@ -115,15 +169,34 @@
             });
         };
 
+        this.back = function () {
+            ko.cleanNode(document.getElementById("newBook"));
+            ko.cleanNode(document.getElementById("booksList"));
+            ko.applyBindings(new BooksModel(), document.getElementById("newBook"));
+            GetBooks();
+            isBooksListVisible(true);
+            isBookEditorVisible(false);
+        };
+
         this.removeAuthor = function (author) {
+            var authors = [];
             this.authors.remove(author);
+
+            $.each(this.authors(), (i, elem) => {
+                authors.push({
+                    name: elem.name(),
+                    surname: elem.surname()
+                });
+            })
+
+            if (temp.length > 0)
+                this.book()[0].Authors = temp;
         }.bind(this);
     };
 
-
     ko.applyBindings(new BooksModel(), document.getElementById("newBook"));
-
     GetBooks();
+
     function GetBooks() {
         $.ajax({
             type: 'GET',
@@ -133,36 +206,49 @@
                 $.each(books, (i, book) => {
                     booksList.push(book);
                 })
-
-                ko.applyBindings(new PagedGridModel(booksList), document.getElementById("booksList"));
-
-
+                ko.applyBindings(new BookGridModel(booksList), document.getElementById("booksList"));
             },
-            error: function (emp) {
+            error: function () {
                 alert('error');
             }
         });
     }
 
-    var PagedGridModel = function (items) {
-        this.items = ko.observableArray(items);
+    var BookGridModel = function (books) {
+        this.books = ko.observableArray(books);
 
-        this.addItem = function () {
-            this.items.push({ name: "New item", sales: 0, price: 100 });
-        };
-
-        this.sortByName = function () {
-            this.items.sort(function (a, b) {
-                return a.name < b.name ? -1 : 1;
+        this.sortByTitle = function () {
+            this.books.sort(function (a, b) {
+                var sortValue = a.title < b.title ? -1 : 1;
+                localStorage.setItem("sorting", sortValue);
+                return sortValue;
             });
         };
 
-        this.jumpToFirstPage = function () {
-            this.gridViewModel.currentPageIndex(0);
+        this.sortByYear = function () {
+            this.books.sort(function (a, b) {
+                var sortValue = a.year < b.year ? -1 : 1;
+                localStorage.setItem("sorting", sortValue);
+                return sortValue;
+            });
+        };
+
+        var sortValue = localStorage.getItem("sorting");
+        this.books.sort(function () {
+            return sortValue;
+        });
+
+        this.editBook = function () {
+            ko.cleanNode(document.getElementById("newBook"));
+            ko.applyBindings(new BooksModel(), document.getElementById("newBook"));
+            isBooksListVisible(false);
+            isBookEditorVisible(true);
+            isEditButtonVisible(false);
+            isAddButtonVisible(true);
         };
 
         this.booksGrid = new ko.simpleGrid.viewModel({
-            data: this.items,
+            data: this.books,
             columns: [
                 { headerText: "№", rowText: "Id" },
                 { headerText: "Title", rowText: "Title" },
@@ -184,13 +270,47 @@
                     headerText: "Actions", rowText:
                         {
                             edit: function (item) {
+                                isAddButtonVisible(false);
+                                isEditButtonVisible(true);
                                 return function () {
-                                    alert(item.Id)
+                                    $.ajax({
+                                        type: 'POST',
+                                        url: '/Books/EditBook',
+                                        data: {
+                                            id: item.Id
+                                        },
+                                        success: function (book) {
+                                            var books = [];
+                                            books.push(book);
+                                            isBooksListVisible(false);
+                                            isBookEditorVisible(true);
+                                            ko.cleanNode(document.getElementById("newBook"));
+                                            ko.applyBindings(new BooksModel(books), document.getElementById("newBook"));
+                                            isBooksListVisible(false);
+                                            isBookEditorVisible(true);
+                                        },
+                                        error: function () {
+                                            alert('error');
+                                        }
+                                    });
                                 }
                             },
                             deletion: function (item) {
                                 return function () {
-                                    alert(item.Id)
+                                    $.ajax({
+                                        type: 'POST',
+                                        url: '/Books/DeleteBook',
+                                        data: {
+                                            id: item.Id
+                                        },
+                                        success: function (books) {
+                                            ko.cleanNode(document.getElementById("booksList"));
+                                            GetBooks();
+                                        },
+                                        error: function () {
+                                            alert('error');
+                                        }
+                                    });
                                 }
                             }
                         }
@@ -199,13 +319,4 @@
             pageSize: 10
         });
     };
-
-
-
-    $("#addBook").click(function () {
-        $("#booksList").hide();
-        $("#newBook").show();
-    });
-
-
 </script>

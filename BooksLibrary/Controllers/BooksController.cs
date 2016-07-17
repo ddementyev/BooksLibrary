@@ -10,76 +10,13 @@ namespace BooksLibrary.Controllers
 {
     public class BooksController : Controller
     {
-        // GET: Book
         public ActionResult List()
         {
             var books = Session["books"] as List<BookInfo>;
-
             if (books == null)
             {
                 books = new List<BookInfo>();
             }
-
-            books.Add(new BookInfo()
-            {
-                Id = 1,
-                Title = "Книга",
-                Authors = new List<Author>()
-                {
-                   new Author()
-                   {
-                       Name = "Имя1",
-                       Surname = "Фамилия1"
-                   },
-                   new Author()
-                   {
-                       Name = "Имя2",
-                       Surname = "Фамилия2"
-                   },
-                   
-                   new Author()
-                   {
-                       Name = "Имя3",
-                       Surname = "Фамилия3"
-                   },
-
-                   new Author()
-                   {
-                       Name = "Имя4",
-                       Surname = "Фамилия5"
-                   }
-                },
-                Pages = 305345345345345,
-                Year = "1904657",
-                Publisher = "Thertgsdfgsdgsdfgdgsdgdhertmb",
-                ISBN = "90906890425435353453423",
-                Cover = null,
-            });
-
-            books.Add(new BookInfo()
-            {
-                Id = 2,
-                Title = "Книга2",
-                Authors = new List<Author>()
-                {
-                   new Author()
-                   {
-                       Name = "Имя2",
-                       Surname = "Фамилия2"
-                   },
-                   new Author()
-                   {
-                       Name = "Имя3",
-                       Surname = "Фамилия3"
-                   },
-                },
-                Pages = 5300534534534534,
-                Year = "1645987",
-                Publisher = "Mtrhtrgfdsdfgsdgsgsdfgsfdgsfdgsfdehsc",
-                ISBN = "456987123",
-                Cover = null,
-            });
-
             Session["books"] = books;
             return View();
         }
@@ -87,17 +24,63 @@ namespace BooksLibrary.Controllers
         [HttpGet]
         public JsonResult GetBooks()
         {
-            var res = Session["books"] as List<BookInfo>;
             return Json(Session["books"], JsonRequestBehavior.AllowGet);
         }
 
         [HttpPost]
         public JsonResult AddBook(BookInfo book)
-        {
+        {        
             var books = Session["books"] as List<BookInfo>;
+
+            book.Id = books.Count() == 0 ? 1 : books.LastOrDefault().Id + 1;
+            if (book.Cover == null)
+                book.Cover = GetDefaultCover();
+            if (book.Publisher == null)
+                book.Publisher = "No publisher";
+
             books.Add(book);
             Session["books"] = books;
-            var vvv = Session["books"] as List<BookInfo>;
+
+            return Json("OK");
+        }
+
+        public string GetDefaultCover()
+        {
+            var path = Server.MapPath("~/Content/img/nocover.jpg");
+            var bytes = System.IO.File.ReadAllBytes(path);
+            return "data:image/jpg;base64," + Convert.ToBase64String(bytes);
+        }
+
+        [HttpPost]
+        public JsonResult DeleteBook(int id)
+        {
+            var books = Session["books"] as List<BookInfo>;
+            books.Remove(books.Single(a => a.Id == id));
+            Session["books"] = books;
+
+            return Json("OK");
+        }
+
+        [HttpPost]
+        public JsonResult EditBook(int id)
+        {
+            return Json((Session["books"] as List<BookInfo>).FirstOrDefault(a=>a.Id == id), JsonRequestBehavior.AllowGet);
+        }
+
+        [HttpPost]
+        public JsonResult ChangeBook(BookInfo newValues)
+        {
+            var books = Session["books"] as List<BookInfo>;
+            var oldValues = books.FirstOrDefault(a => a.Id == newValues.Id);
+
+            if (newValues.Cover == null)
+                newValues.Cover = GetDefaultCover();
+
+            int index = books.IndexOf(oldValues);
+            if (index != -1)
+                books[index] = newValues;
+
+            Session["books"] = books;
             return Json("OK");
         }
     }
